@@ -12,6 +12,300 @@ return {
       require "configs.lspconfig"
     end,
   },
+  {
+    "folke/noice.nvim",
+    event = "VeryLazy",
+    dependencies = {
+      "MunifTanjim/nui.nvim",
+      "rcarriga/nvim-notify",
+    },
+    opts = {
+      lsp = {
+        override = {
+          ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
+          ["vim.lsp.util.stylize_markdown"] = true,
+          ["cmp.entry.get_documentation"] = true,
+        },
+      },
+      presets = {
+        bottom_search = true,
+        command_palette = true,
+        long_message_to_split = true,
+      },
+      -- This is the key part - disable signature help override
+      lsp = {
+        signature = {
+          enabled = false, -- This fixes tab completion issues
+        },
+      },
+      -- Or alternatively, configure it properly:
+      views = {
+        cmdline_popup = {
+          position = {
+            row = 5,
+            col = "50%",
+          },
+          size = {
+            width = 60,
+            height = "auto",
+          },
+        },
+      },
+    },
+  },
+  --
+  -- {
+  --   "folke/noice.nvim",
+  --   event = "VeryLazy",
+  --   opts = {
+  --   },
+  --   dependencies = {
+  --   "MunifTanjim/nui.nvim",
+  --   "rcarriga/nvim-notify",
+  --
+  --   }
+  -- },
+
+  {
+    "github/copilot.vim",
+    event = "InsertEnter",
+  },
+
+  {
+    "zbirenbaum/copilot-cmp",
+    event = "InsertEnter",
+    dependencies = { "github/copilot.vim" },
+    config = function()
+      require("copilot_cmp").setup()
+    end,
+  },
+  -- Add this to your plugins table
+  {
+    "akinsho/toggleterm.nvim",
+    version = "*",
+    event = "VeryLazy",
+    config = function()
+      require("toggleterm").setup {
+        -- Terminal settings
+        size = function(term)
+          if term.direction == "horizontal" then
+            return 15
+          elseif term.direction == "vertical" then
+            return vim.o.columns * 0.4
+          end
+        end,
+        open_mapping = [[<C-\>]], -- Quick toggle with Ctrl+\
+        hide_numbers = true,
+        shade_filetypes = {},
+        shade_terminals = true,
+        shading_factor = 2,
+        start_in_insert = true,
+        insert_mappings = true,
+        terminal_mappings = true,
+        persist_size = true,
+        persist_mode = true,
+        direction = "horizontal", -- 'vertical' | 'horizontal' | 'tab' | 'float'
+        close_on_exit = true,
+        shell = vim.o.shell,
+        auto_scroll = true,
+        -- Floating terminal settings
+        float_opts = {
+          border = "curved", -- Matches NvChad style
+          winblend = 0,
+          highlights = {
+            border = "Normal",
+            background = "Normal",
+          },
+        },
+      }
+
+      -- Custom terminals for different purposes
+      local Terminal = require("toggleterm.terminal").Terminal
+
+      -- Floating terminal
+      local float_term = Terminal:new {
+        direction = "float",
+        float_opts = {
+          border = "curved",
+        },
+        hidden = true,
+      }
+
+      -- Compilation terminal
+      local compile_term = Terminal:new {
+        direction = "horizontal",
+        hidden = true,
+      }
+
+      -- Python REPL
+      local python_repl = Terminal:new {
+        cmd = "python3",
+        direction = "vertical",
+        hidden = true,
+      }
+
+      -- Node.js REPL
+      local node_repl = Terminal:new {
+        cmd = "node",
+        direction = "vertical",
+        hidden = true,
+      }
+
+      -- Git lazygit integration (if you have lazygit installed)
+      local lazygit = Terminal:new {
+        cmd = "lazygit",
+        dir = "git_dir",
+        direction = "float",
+        float_opts = {
+          border = "curved",
+          width = function()
+            return math.floor(vim.o.columns * 0.9)
+          end,
+          height = function()
+            return math.floor(vim.o.lines * 0.9)
+          end,
+        },
+        hidden = true,
+        on_open = function(term)
+          vim.cmd "startinsert!"
+          vim.api.nvim_buf_set_keymap(term.bufnr, "n", "q", "<cmd>close<CR>", { noremap = true, silent = true })
+        end,
+      }
+
+      -- Keymaps that integrate with NvChad
+      local map = vim.keymap.set
+
+      -- Terminal toggles (using leader key like NvChad)
+      -- Language-specific terminals
+      map("n", "<leader>tp", function()
+        python_repl:toggle()
+      end, { desc = "Toggle Python REPL" })
+      map("n", "<leader>tn", function()
+        node_repl:toggle()
+      end, { desc = "Toggle Node REPL" })
+
+      -- Git integration
+      map("n", "<leader>gg", function()
+        lazygit:toggle()
+      end, { desc = "Toggle Lazygit" })
+
+      -- Quick compile and run
+      map("n", "<leader>cr", function()
+        vim.cmd "w" -- Save file first
+        local ft = vim.bo.filetype
+        local file = vim.fn.expand "%"
+        local cmd = ""
+
+        -- Compilation commands for different languages
+        if ft == "c" then
+          local output = vim.fn.expand "%:r"
+          cmd = string.format("gcc %s -o %s && ./%s", file, output, output)
+        elseif ft == "cpp" then
+          local output = vim.fn.expand "%:r"
+          cmd = string.format("g++ %s -o %s && ./%s", file, output, output)
+        elseif ft == "rust" then
+          cmd = "cargo run"
+        elseif ft == "go" then
+          cmd = "go run " .. file
+        elseif ft == "python" then
+          cmd = "python3 " .. file
+        elseif ft == "javascript" then
+          cmd = "node " .. file
+        elseif ft == "lua" then
+          cmd = "lua " .. file
+        elseif ft == "java" then
+          local classname = vim.fn.expand "%:r"
+          cmd = string.format("javac %s && java %s", file, classname)
+        else
+          print("No compile command for " .. ft)
+          return
+        end
+
+        compile_term:send(cmd)
+        compile_term:open()
+      end, { desc = "Compile and run current file" })
+
+      -- Quick compile only
+      map("n", "<leader>cb", function()
+        vim.cmd "w"
+        local ft = vim.bo.filetype
+        local file = vim.fn.expand "%"
+        local cmd = ""
+
+        if ft == "c" then
+          cmd = string.format("gcc %s -o %s", file, vim.fn.expand "%:r")
+        elseif ft == "cpp" then
+          cmd = string.format("g++ %s -o %s", file, vim.fn.expand "%:r")
+        elseif ft == "rust" then
+          cmd = "cargo build"
+        elseif ft == "go" then
+          cmd = "go build " .. file
+        elseif ft == "java" then
+          cmd = "javac " .. file
+        else
+          print("No compile command for " .. ft)
+          return
+        end
+
+        compile_term:send(cmd)
+        compile_term:open()
+      end, { desc = "Compile current file" })
+
+      -- Terminal navigation (works in terminal mode)
+      function _G.set_terminal_keymaps()
+        local opts = { buffer = 0 }
+        map("t", "<esc>", [[<C-\><C-n>]], opts) -- Easy escape from terminal
+        map("t", "jk", [[<C-\><C-n>]], opts) -- Alternative escape
+        map("t", "<C-h>", [[<Cmd>wincmd h<CR>]], opts) -- Navigate left
+        map("t", "<C-j>", [[<Cmd>wincmd j<CR>]], opts) -- Navigate down
+        map("t", "<C-k>", [[<Cmd>wincmd k<CR>]], opts) -- Navigate up
+        map("t", "<C-l>", [[<Cmd>wincmd l<CR>]], opts) -- Navigate right
+      end
+
+      -- Apply terminal keymaps when entering terminal
+      vim.cmd "autocmd! TermOpen term://* lua set_terminal_keymaps()"
+    end,
+  },
+  {
+    "nvim-pack/nvim-spectre",
+    keys = {
+      { "<leader>S", '<cmd>lua require("spectre").toggle()<CR>', desc = "Toggle Spectre" },
+      { "<leader>sw", '<cmd>lua require("spectre").open_visual({select_word=true})<CR>', desc = "Search current word" },
+    },
+  },
+  {
+    "lukas-reineke/indent-blankline.nvim",
+    main = "ibl",
+    ---@module "ibl"
+    ---@type ibl.config
+    opts = {},
+  },
+  {
+    "AckslD/nvim-neoclip.lua",
+    dependencies = {
+      "nvim-telescope/telescope.nvim",
+      "nvim-lua/plenary.nvim",
+      "kkharji/sqlite.lua", -- required for persistent history
+    },
+    config = function()
+      require("neoclip").setup {
+        history = 1000,
+        enable_persistent_history = true,
+      }
+      require("telescope").load_extension "neoclip"
+    end,
+    keys = {
+      { "<leader>p", "<cmd>Telescope neoclip<cr>", desc = "Clipboard history" },
+    },
+  },
+  {
+    "gennaro-tedesco/nvim-peekup",
+    config = true,
+    keys = {
+      { '"', mode = { "n", "x" } },
+      { "<c-r>", mode = "i" },
+    },
+  },
 
   -- test new blink
   -- { import = "nvchad.blink.lazyspec" },
