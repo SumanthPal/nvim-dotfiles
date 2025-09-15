@@ -2,7 +2,6 @@
 # 🚀 My NvChad Neovim Configuration
 
 my nvim setup built from NvChad for mainly python, cpp, and rust development
----
 
 ## ✨ Features
 
@@ -86,10 +85,7 @@ my nvim setup built from NvChad for mainly python, cpp, and rust development
 **Python:** Pyright, Black, REPL, debugger ready
 **JS/TS:** ts\_ls, Biome, inlay hints, Node.js REPL
 **C/C++:** clangd, clang-format, project indexing
+**Rust** rust_analyzer, linter, dap_rs
 **Systems/DevOps:** Lua/Stylua, Markdown, JSON/YAML, shell scripts
 
----
 
-If you want, I can also make an **even shorter “one-page” version** that’s fully copy-paste ready for a GitHub README. It would basically be a single **screen of essentials**.
-
-Do you want me to do that?
