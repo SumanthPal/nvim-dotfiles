@@ -1,151 +1,192 @@
 -- LSP Configuration
 require("nvchad.configs.lspconfig").defaults()
 
+local nvlsp = require "nvchad.configs.lspconfig"
+
+-- Fix .tpp and .hpp filetype detection FIRST
+vim.filetype.add {
+  extension = {
+    tpp = "cpp",
+    hpp = "cpp",
+  },
+}
+
+-- Define server configurations using new API
 local servers = {
-  -- Web Development
-  "html",
-  "cssls",
-  "ts_ls", -- TypeScript/JavaScript (replaces tsserver)
-  -- Systems Programming
-  "clangd", -- C/C++
-  "rust_analyzer", -- Rust
-  -- Python
-  "pyright", -- or "pylsp" if you prefer python-lsp-server
-}
-
-vim.lsp.enable(servers)
-
-local lspconfig = require "lspconfig"
-
--- Python: Pyright setup
-lspconfig.pyright.setup {
-  settings = {
-    python = {
-      analysis = {
-        typeCheckingMode = "basic", -- or "strict" for more checking
-        autoSearchPaths = true,
-        useLibraryCodeForTypes = true,
-        autoImportCompletions = true,
+  html = {},
+  cssls = {},
+  ts_ls = {
+    settings = {
+      typescript = {
+        inlayHints = {
+          includeInlayParameterNameHints = "all",
+          includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+          includeInlayFunctionParameterTypeHints = true,
+          includeInlayVariableTypeHints = true,
+          includeInlayPropertyDeclarationTypeHints = true,
+          includeInlayFunctionLikeReturnTypeHints = true,
+          includeInlayEnumMemberValueHints = true,
+        },
+      },
+      javascript = {
+        inlayHints = {
+          includeInlayParameterNameHints = "all",
+          includeInlayParameterNameHintsWhenArgumentMatchesName = false,
+          includeInlayFunctionParameterTypeHints = true,
+          includeInlayVariableTypeHints = true,
+          includeInlayPropertyDeclarationTypeHints = true,
+          includeInlayFunctionLikeReturnTypeHints = true,
+          includeInlayEnumMemberValueHints = true,
+        },
       },
     },
   },
-}
+  clangd = {
+    cmd = {
+      "clangd",
+      "--background-index",
+      "--clang-tidy",
+      "--header-insertion=iwyu",
+      "--completion-style=detailed",
+      "--function-arg-placeholders",
+      "--fallback-style=llvm",
+    },
+    init_options = {
+      usePlaceholders = true,
+      completeUnimported = true,
+      clangdFileStatus = true,
+    },
+    filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
+  },
+  rust_analyzer = {},
+  pyright = {
+    before_init = function(_, config)
+      -- Function to find Python executable in virtual environment
+      local function find_venv_python()
+        local venv_patterns = { "venv", "env", ".venv", ".env", "virtualenv" }
+        local workspace_root = config.root_dir or vim.fn.getcwd()
 
--- TypeScript/JavaScript: Enhanced settings
-lspconfig.ts_ls.setup {
-  settings = {
-    typescript = {
-      inlayHints = {
-        includeInlayParameterNameHints = "all",
-        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-        includeInlayFunctionParameterTypeHints = true,
-        includeInlayVariableTypeHints = true,
-        includeInlayPropertyDeclarationTypeHints = true,
-        includeInlayFunctionLikeReturnTypeHints = true,
-        includeInlayEnumMemberValueHints = true,
+        -- Check for virtual environments in workspace root
+        for _, venv in ipairs(venv_patterns) do
+          local venv_path = workspace_root .. "/" .. venv
+          local python_path = venv_path .. "/bin/python"
+
+          if vim.fn.filereadable(python_path) == 1 then
+            return python_path
+          end
+        end
+
+        -- Fallback to system python
+        return vim.fn.exepath("python3") or vim.fn.exepath("python")
+      end
+
+      local python_path = find_venv_python()
+      config.settings.python.pythonPath = python_path
+    end,
+    settings = {
+      python = {
+        analysis = {
+          typeCheckingMode = "basic",
+          autoSearchPaths = true,
+          useLibraryCodeForTypes = true,
+          autoImportCompletions = true,
+          diagnosticMode = "workspace",
+          -- Add these for better package resolution
+          extraPaths = {},
+          stubPath = vim.fn.stdpath("data") .. "/lazy/python-type-stubs",
+        },
       },
     },
-    javascript = {
-      inlayHints = {
-        includeInlayParameterNameHints = "all",
-        includeInlayParameterNameHintsWhenArgumentMatchesName = false,
-        includeInlayFunctionParameterTypeHints = true,
-        includeInlayVariableTypeHints = true,
-        includeInlayPropertyDeclarationTypeHints = true,
-        includeInlayFunctionLikeReturnTypeHints = true,
-        includeInlayEnumMemberValueHints = true,
-      },
-    },
+    root_dir = vim.fs.root(0, {
+      "pyproject.toml",
+      "setup.py",
+      "setup.cfg",
+      "requirements.txt",
+      "Pipfile",
+      ".git",
+    }),
+  },
+  eslint = {
+    on_attach = function(client, bufnr)
+      vim.api.nvim_create_autocmd("BufWritePre", {
+        buffer = bufnr,
+        command = "EslintFixAll",
+      })
+    end,
   },
 }
 
--- ESLint setup
-lspconfig.eslint.setup {
-  on_attach = function(client, bufnr)
-    vim.api.nvim_create_autocmd("BufWritePre", {
-      buffer = bufnr,
-      command = "EslintFixAll",
-    })
-  end,
-}
+-- Enable all servers using the new vim.lsp.enable API
+for server, config in pairs(servers) do
+  -- Merge with nvlsp defaults
+  config.on_attach = config.on_attach or nvlsp.on_attach
+  config.on_init = config.on_init or nvlsp.on_init
+  config.capabilities = config.capabilities or nvlsp.capabilities
 
--- C/C++: Clangd with compile commands
-lspconfig.clangd.setup {
-  cmd = {
-    "clangd",
-    "--background-index",
-    "--clang-tidy",
-    "--header-insertion=iwyu",
-    "--completion-style=detailed",
-    "--function-arg-placeholders",
-    "--fallback-style=llvm",
-  },
-  init_options = {
-    usePlaceholders = true,
-    completeUnimported = true,
-    clangdFileStatus = true,
-  },
-}
+  vim.lsp.enable(server, config)
+end
 
 -- FORMATTERS CONFIGURATION
--- Configure conform.nvim for formatting
 local conform = require "conform"
-
 conform.setup {
   formatters_by_ft = {
-    -- Python
     python = { "black" },
-
-    -- JavaScript/TypeScript
     javascript = { "biome" },
     typescript = { "biome" },
     javascriptreact = { "biome" },
     typescriptreact = { "biome" },
-
-    -- JSON
     json = { "biome" },
     jsonc = { "biome" },
-
-    -- CSS/HTML (if you want biome for these too)
     css = { "biome" },
     html = { "biome" },
-
-    -- Lua
     lua = { "stylua" },
-
-    -- C/C++
     c = { "clang_format" },
     cpp = { "clang_format" },
-
-    -- Rust (rustfmt is usually handled by rust_analyzer)
     rust = { "rustfmt" },
-
-    -- Markdown
-    markdown = { "prettier" }, -- or remove if you don't want markdown formatting
+    markdown = { "prettier" },
   },
-
-  -- Format on save
   format_on_save = {
     timeout_ms = 500,
     lsp_fallback = true,
   },
-
-  -- Formatters configuration
   formatters = {
     black = {
       prepend_args = { "--fast" },
     },
-    biome = {
-      -- Biome will use biome.json config if present
-    },
-    stylua = {
-      -- Will use .stylua.toml or stylua.toml if present
-    },
-    clang_format = {
-      -- Will use .clang-format file if present
-    },
   },
 }
+
+-- Python interpreter selection command
+vim.api.nvim_create_user_command("PythonSetInterpreter", function()
+  local venv_patterns = { "venv", "env", ".venv", ".env", "virtualenv" }
+  local workspace_root = vim.fn.getcwd()
+  local interpreters = {}
+
+  -- Find all virtual environments
+  for _, venv in ipairs(venv_patterns) do
+    local venv_path = workspace_root .. "/" .. venv
+    local python_path = venv_path .. "/bin/python"
+    if vim.fn.filereadable(python_path) == 1 then
+      table.insert(interpreters, python_path)
+    end
+  end
+
+  -- Add system Python
+  table.insert(interpreters, vim.fn.exepath("python3") or vim.fn.exepath("python"))
+
+  vim.ui.select(interpreters, {
+    prompt = "Select Python interpreter:",
+  }, function(choice)
+    if choice then
+      -- Restart pyright with new Python path
+      vim.lsp.stop_client(vim.lsp.get_clients { name = "pyright" })
+      vim.defer_fn(function()
+        vim.cmd "edit"
+      end, 100)
+      print("Python interpreter set to: " .. choice)
+    end
+  end)
+end, { desc = "Select Python interpreter for Pyright" })
 
 -- Key mappings for manual formatting
 vim.keymap.set({ "n", "v" }, "<leader>mp", function()
@@ -156,7 +197,6 @@ vim.keymap.set({ "n", "v" }, "<leader>mp", function()
   }
 end, { desc = "Format file or range (in visual mode)" })
 
--- Alternative: Format with specific formatter
 vim.keymap.set("n", "<leader>mf", function()
   vim.ui.select(conform.list_formatters(0), {
     prompt = "Select formatter:",
@@ -169,3 +209,6 @@ vim.keymap.set("n", "<leader>mf", function()
     end
   end)
 end, { desc = "Format with specific formatter" })
+
+-- Python interpreter keymap
+vim.keymap.set("n", "<leader>pi", "<cmd>PythonSetInterpreter<cr>", { desc = "Select Python interpreter" })

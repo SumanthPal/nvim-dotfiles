@@ -85,7 +85,7 @@ my nvim setup built from NvChad for mainly python, cpp, and rust development
 **Python:** Pyright, Black, REPL, debugger ready
 **JS/TS:** ts\_ls, Biome, inlay hints, Node.js REPL
 **C/C++:** clangd, clang-format, project indexing
-**Rust** rust_analyzer, linter, dap_rs
+**Rust** rust_analyzer, linter, 
 **Systems/DevOps:** Lua/Stylua, Markdown, JSON/YAML, shell scripts
 
 

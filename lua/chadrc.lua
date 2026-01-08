@@ -6,24 +6,46 @@
 local M = {}
 
 M.base46 = {
-  theme = "aquarium",
+  theme = "tokyonight",
+  transparency = true,
   hl_override = {
     Comment = { italic = true },
     ["@comment"] = { italic = true },
   },
 }
-
 M.nvdash = {
   load_on_startup = true,
+  buttons = {},
   header = {
-    " ▄█▀▀▀█▄█        ▀███▀▀▀██▄     ",
-    "▄██    ▀█          ██   ▀██▄    ",
-    "▀███▄              ██   ▄██     ",
-    "  ▀█████▄          ███████      ",
-    "▄     ▀██          ██           ",
-    "██     ██   ▄▄     ██           ",
-    "█▀█████▀    ██   ▄████▄         ",
-    "                                ",
+    "                                                                  ",
+    "                                                                 ",
+    "                                                                 ",
+    "                                                                 ",
+    "                                                                 ",
+    "                                                                 ",
+    "                                                                 ",
+    "                                                                 ",
+    "                                                                 ",
+    "                                                                 ",
+    "                                                                 ",
+    "                                                                 ",
+    "                                                                 ",
+    "                                                                 ",
+    "                                                                 ",
+    "                                                                 ",
+    "                                                                 ",
+    "                                                                  ",
+    "                                                                 ",
+    "                                                                 ",
+    "                                                                 ",
+    "                                                                  ",
+    "                                                                  ",
+    "                                                                  ",
+    "                                                                  ",
+    "                                                                  ",
+    "                                                                  ",
+    "                                                                  ",
+    "                                                                  ",
   },
 }
 

@@ -65,10 +65,32 @@ return {
   --
   --   }
   -- },
+  {
+    "harenome/vim-mipssyntax",
+    ft = { "mips", "asm" },
+    config = function()
+      vim.api.nvim.create_autocmd({ "BufRead", "BufNewFile" }, {
+        pattern = { "*.s", "*.asm" },
+        callback = function()
+          vim.bo.filetype = "mips"
+        end,
+      })
+    end,
+  },
 
   {
     "github/copilot.vim",
     event = "InsertEnter",
+  },
+  {
+    "greggh/claude-code.nvim",
+    cmd = { "ClaudeCode", "ClaudeCodeContinue", "ClaudeCodeResume", "ClaudeCodeVerbose" },
+    dependencies = {
+      "nvim-lua/plenary.nvim", -- Required for git operations
+    },
+    config = function()
+      require("claude-code").setup()
+    end,
   },
 
   {
@@ -304,6 +326,170 @@ return {
     keys = {
       { '"', mode = { "n", "x" } },
       { "<c-r>", mode = "i" },
+    },
+  },
+  {
+    "iamcco/markdown-preview.nvim",
+    cmd = { "MarkdownPreviewToggle", "MarkdownPreview", "MarkdownPreviewStop" },
+    ft = { "markdown" },
+    build = function()
+      vim.fn["mkdp#util#install"]()
+    end,
+  },
+
+  -- Git signs - inline git integration
+  {
+    "lewis6991/gitsigns.nvim",
+    event = "BufReadPre",
+    config = function()
+      require("gitsigns").setup {
+        signs = {
+          add = { text = "│" },
+          change = { text = "│" },
+          delete = { text = "_" },
+          topdelete = { text = "‾" },
+          changedelete = { text = "~" },
+          untracked = { text = "┆" },
+        },
+        signs_staged = {
+          add = { text = "│" },
+          change = { text = "│" },
+          delete = { text = "_" },
+          topdelete = { text = "‾" },
+          changedelete = { text = "~" },
+          untracked = { text = "┆" },
+        },
+        on_attach = function(bufnr)
+          local gs = package.loaded.gitsigns
+          local map = vim.keymap.set
+
+          -- Navigation
+          map("n", "]h", function()
+            if vim.wo.diff then
+              return "]c"
+            end
+            vim.schedule(function()
+              gs.next_hunk()
+            end)
+            return "<Ignore>"
+          end, { expr = true, buffer = bufnr, desc = "Next git hunk" })
+
+          map("n", "[h", function()
+            if vim.wo.diff then
+              return "[c"
+            end
+            vim.schedule(function()
+              gs.prev_hunk()
+            end)
+            return "<Ignore>"
+          end, { expr = true, buffer = bufnr, desc = "Prev git hunk" })
+
+          -- Actions
+          map("n", "<leader>hs", gs.stage_hunk, { buffer = bufnr, desc = "Stage hunk" })
+          map("n", "<leader>hr", gs.reset_hunk, { buffer = bufnr, desc = "Reset hunk" })
+          map("v", "<leader>hs", function()
+            gs.stage_hunk { vim.fn.line ".", vim.fn.line "v" }
+          end, { buffer = bufnr, desc = "Stage hunk" })
+          map("v", "<leader>hr", function()
+            gs.reset_hunk { vim.fn.line ".", vim.fn.line "v" }
+          end, { buffer = bufnr, desc = "Reset hunk" })
+          map("n", "<leader>hS", gs.stage_buffer, { buffer = bufnr, desc = "Stage buffer" })
+          map("n", "<leader>hu", gs.undo_stage_hunk, { buffer = bufnr, desc = "Undo stage hunk" })
+          map("n", "<leader>hR", gs.reset_buffer, { buffer = bufnr, desc = "Reset buffer" })
+          map("n", "<leader>hp", gs.preview_hunk, { buffer = bufnr, desc = "Preview hunk" })
+          map("n", "<leader>hb", function()
+            gs.blame_line { full = true }
+          end, { buffer = bufnr, desc = "Blame line" })
+          map("n", "<leader>hd", gs.diffthis, { buffer = bufnr, desc = "Diff this" })
+          map("n", "<leader>hD", function()
+            gs.diffthis "~"
+          end, { buffer = bufnr, desc = "Diff this ~" })
+
+          -- Text object
+          map({ "o", "x" }, "ih", ":<C-U>Gitsigns select_hunk<CR>", { buffer = bufnr, desc = "Select hunk" })
+        end,
+      }
+    end,
+  },
+
+  -- Flash - lightning fast navigation
+  {
+    "folke/flash.nvim",
+    event = "VeryLazy",
+    opts = {
+      labels = "asdfghjklqwertyuiopzxcvbnm",
+      search = {
+        multi_window = true,
+        forward = true,
+        wrap = true,
+        mode = "exact",
+      },
+      jump = {
+        jumplist = true,
+        pos = "start",
+        history = false,
+        register = false,
+        nohlsearch = false,
+        autojump = false,
+      },
+      label = {
+        uppercase = true,
+        rainbow = {
+          enabled = false,
+          shade = 5,
+        },
+      },
+      modes = {
+        search = {
+          enabled = true,
+        },
+        char = {
+          enabled = true,
+          jump_labels = true,
+        },
+      },
+    },
+    keys = {
+      {
+        "s",
+        mode = { "n", "x", "o" },
+        function()
+          require("flash").jump()
+        end,
+        desc = "Flash",
+      },
+      {
+        "S",
+        mode = { "n", "x", "o" },
+        function()
+          require("flash").treesitter()
+        end,
+        desc = "Flash Treesitter",
+      },
+      {
+        "r",
+        mode = "o",
+        function()
+          require("flash").remote()
+        end,
+        desc = "Remote Flash",
+      },
+      {
+        "R",
+        mode = { "o", "x" },
+        function()
+          require("flash").treesitter_search()
+        end,
+        desc = "Treesitter Search",
+      },
+      {
+        "<c-s>",
+        mode = { "c" },
+        function()
+          require("flash").toggle()
+        end,
+        desc = "Toggle Flash Search",
+      },
     },
   },
 
