@@ -4,13 +4,68 @@ return {
     -- event = 'BufWritePre', -- uncomment for format on save
     opts = require "configs.conform",
   },
-
-  -- These are some examples, uncomment them if you want to see them work!
+  {
+    "amitds1997/remote-nvim.nvim",
+    version = "*", -- Pin to GitHub releases
+    dependencies = {
+      "nvim-lua/plenary.nvim", -- For standard functions
+      "MunifTanjim/nui.nvim", -- To build the plugin UI
+      "nvim-telescope/telescope.nvim", -- For picking b/w different remote methods
+    },
+    config = true,
+  },
+  {
+    "kaarmu/typst.vim",
+    ft = "typst",
+    lazy = false,
+  },
+  {
+    "chomosuke/typst-preview.nvim",
+    ft = "typst",
+    build = function()
+      require("typst-preview").update()
+    end,
+    config = function()
+      require("typst-preview").setup()
+    end,
+  },
   {
     "neovim/nvim-lspconfig",
     config = function()
       require "configs.lspconfig"
     end,
+  },
+  {
+    "hrsh7th/nvim-cmp",
+    event = "InsertEnter",
+    dependencies = {
+      "hrsh7th/cmp-cmdline",
+    },
+    config = function()
+      local cmp = require "cmp"
+
+      -- `:` cmdline completion (Ex commands, paths, etc.)
+      cmp.setup.cmdline(":", {
+        mapping = cmp.mapping.preset.cmdline(),
+        sources = cmp.config.sources({
+          { name = "path" },
+        }, {
+          { name = "cmdline" },
+        }),
+      })
+
+      -- Optional: `/` and `?` search completion from current buffer
+      cmp.setup.cmdline({ "/", "?" }, {
+        mapping = cmp.mapping.preset.cmdline(),
+        sources = {
+          { name = "buffer" },
+        },
+      })
+    end,
+  },
+  {
+    "hrsh7th/cmp-cmdline",
+    lazy = true,
   },
   {
     "folke/noice.nvim",

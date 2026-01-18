@@ -8,6 +8,7 @@ vim.filetype.add {
   extension = {
     tpp = "cpp",
     hpp = "cpp",
+    typ = "typst",
   },
 }
 
@@ -56,9 +57,13 @@ local servers = {
       completeUnimported = true,
       clangdFileStatus = true,
     },
-    filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
+    filetypes = { "c", "tpp", "hpp", "cpp", "objc", "objcpp", "cuda", "proto" },
   },
   rust_analyzer = {},
+  tinymist = {
+    cmd = { "tinymist" },
+    filetypes = { "typst", "typ" },
+  },
   pyright = {
     before_init = function(_, config)
       -- Function to find Python executable in virtual environment
@@ -77,7 +82,7 @@ local servers = {
         end
 
         -- Fallback to system python
-        return vim.fn.exepath("python3") or vim.fn.exepath("python")
+        return vim.fn.exepath "python3" or vim.fn.exepath "python"
       end
 
       local python_path = find_venv_python()
@@ -93,7 +98,7 @@ local servers = {
           diagnosticMode = "workspace",
           -- Add these for better package resolution
           extraPaths = {},
-          stubPath = vim.fn.stdpath("data") .. "/lazy/python-type-stubs",
+          stubPath = vim.fn.stdpath "data" .. "/lazy/python-type-stubs",
         },
       },
     },
@@ -172,7 +177,7 @@ vim.api.nvim_create_user_command("PythonSetInterpreter", function()
   end
 
   -- Add system Python
-  table.insert(interpreters, vim.fn.exepath("python3") or vim.fn.exepath("python"))
+  table.insert(interpreters, vim.fn.exepath "python3" or vim.fn.exepath "python")
 
   vim.ui.select(interpreters, {
     prompt = "Select Python interpreter:",
