@@ -5,6 +5,24 @@ return {
     opts = require "configs.conform",
   },
   {
+    "kdheepak/lazygit.nvim",
+    cmd = {
+      "LazyGit",
+      "LazyGitConfig",
+      "LazyGitCurrentFile",
+      "LazyGitFilter",
+      "LazyGitFilterCurrentFile",
+    },
+    -- optional for floating window border decoration
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+    },
+    -- setting the keymap
+    keys = {
+      { "<leader>lg", "<cmd>LazyGit<cr>", desc = "LazyGit" },
+    },
+  },
+  {
     "amitds1997/remote-nvim.nvim",
     version = "*", -- Pin to GitHub releases
     dependencies = {
@@ -13,6 +31,73 @@ return {
       "nvim-telescope/telescope.nvim", -- For picking b/w different remote methods
     },
     config = true,
+  },
+  {
+    "nickjvandyke/opencode.nvim",
+    version = "*", -- Latest stable release
+    dependencies = {
+      {
+        -- `snacks.nvim` integration is recommended, but optional
+        ---@module "snacks" <- Loads `snacks.nvim` types for configuration intellisense
+        "folke/snacks.nvim",
+        optional = true,
+        opts = {
+          input = {}, -- Enhances `ask()`
+          picker = { -- Enhances `select()`
+            actions = {
+              opencode_send = function(...)
+                return require("opencode").snacks_picker_send(...)
+              end,
+            },
+            win = {
+              input = {
+                keys = {
+                  ["<a-a>"] = { "opencode_send", mode = { "n", "i" } },
+                },
+              },
+            },
+          },
+          terminal = {}, -- Enables the `snacks` provider
+        },
+      },
+    },
+    config = function()
+      ---@type opencode.Opts
+      vim.g.opencode_opts = {
+        -- Your configuration, if any; goto definition on the type or field for details
+      }
+
+      vim.o.autoread = true -- Required for `opts.events.reload`
+
+      -- Recommended/example keymaps
+      vim.keymap.set({ "n", "x" }, "<C-a>", function()
+        require("opencode").ask("@this: ", { submit = true })
+      end, { desc = "Ask opencode…" })
+      vim.keymap.set({ "n", "x" }, "<C-x>", function()
+        require("opencode").select()
+      end, { desc = "Execute opencode action…" })
+      vim.keymap.set({ "n", "t" }, "<C-.>", function()
+        require("opencode").toggle()
+      end, { desc = "Toggle opencode" })
+
+      vim.keymap.set({ "n", "x" }, "go", function()
+        return require("opencode").operator "@this "
+      end, { desc = "Add range to opencode", expr = true })
+      vim.keymap.set("n", "goo", function()
+        return require("opencode").operator "@this " .. "_"
+      end, { desc = "Add line to opencode", expr = true })
+
+      vim.keymap.set("n", "<S-C-u>", function()
+        require("opencode").command "session.half.page.up"
+      end, { desc = "Scroll opencode up" })
+      vim.keymap.set("n", "<S-C-d>", function()
+        require("opencode").command "session.half.page.down"
+      end, { desc = "Scroll opencode down" })
+
+      -- You may want these if you use the opinionated `<C-a>` and `<C-x>` keymaps above — otherwise consider `<leader>o…` (and remove terminal mode from the `toggle` keymap)
+      vim.keymap.set("n", "+", "<C-a>", { desc = "Increment under cursor", noremap = true })
+      vim.keymap.set("n", "-", "<C-x>", { desc = "Decrement under cursor", noremap = true })
+    end,
   },
   {
     "kaarmu/typst.vim",
@@ -44,7 +129,17 @@ return {
     config = function()
       local cmp = require "cmp"
 
-      -- `:` cmdline completion (Ex commands, paths, etc.)
+      -- 🔥 NORMAL INSERT MODE COMPLETION
+      cmp.setup {
+        sources = {
+          { name = "nvim_lsp" },
+          { name = "buffer" },
+          { name = "path" },
+          { name = "copilot" }, -- since you're using copilot-cmp
+        },
+      }
+
+      -- `:` cmdline completion
       cmp.setup.cmdline(":", {
         mapping = cmp.mapping.preset.cmdline(),
         sources = cmp.config.sources({
@@ -54,18 +149,58 @@ return {
         }),
       })
 
-      -- Optional: `/` and `?` search completion from current buffer
+      -- `/` and `?` search completion
       cmp.setup.cmdline({ "/", "?" }, {
         mapping = cmp.mapping.preset.cmdline(),
         sources = {
           { name = "buffer" },
         },
       })
+      cmp.setup {
+        mapping = cmp.mapping.preset.insert {
+          ["<C-Space>"] = cmp.mapping.complete(),
+
+          ["<CR>"] = cmp.mapping.confirm {
+            select = true, -- accept currently selected item
+          },
+
+          ["<Tab>"] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+              cmp.select_next_item()
+            else
+              fallback()
+            end
+          end, { "i", "s" }),
+
+          ["<S-Tab>"] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+              cmp.select_prev_item()
+            else
+              fallback()
+            end
+          end, { "i", "s" }),
+        },
+
+        sources = {
+          { name = "nvim_lsp" },
+          { name = "buffer" },
+          { name = "path" },
+          { name = "copilot" },
+        },
+      }
     end,
   },
   {
     "hrsh7th/cmp-cmdline",
     lazy = true,
+  },
+  {
+    "rcarriga/nvim-notify",
+    opts = {
+      background_colour = "#000000",
+      render = "compact", -- Optional: fits the NvChad aesthetic well
+      stages = "fade", -- Smooth transitions
+    },
   },
   {
     "folke/noice.nvim",
@@ -108,31 +243,6 @@ return {
       },
     },
   },
-  --
-  -- {
-  --   "folke/noice.nvim",
-  --   event = "VeryLazy",
-  --   opts = {
-  --   },
-  --   dependencies = {
-  --   "MunifTanjim/nui.nvim",
-  --   "rcarriga/nvim-notify",
-  --
-  --   }
-  -- },
-  {
-    "harenome/vim-mipssyntax",
-    ft = { "mips", "asm" },
-    config = function()
-      vim.api.nvim.create_autocmd({ "BufRead", "BufNewFile" }, {
-        pattern = { "*.s", "*.asm" },
-        callback = function()
-          vim.bo.filetype = "mips"
-        end,
-      })
-    end,
-  },
-
   {
     "github/copilot.vim",
     event = "InsertEnter",
@@ -154,193 +264,6 @@ return {
     dependencies = { "github/copilot.vim" },
     config = function()
       require("copilot_cmp").setup()
-    end,
-  },
-  -- Add this to your plugins table
-  {
-    "akinsho/toggleterm.nvim",
-    version = "*",
-    event = "VeryLazy",
-    config = function()
-      require("toggleterm").setup {
-        -- Terminal settings
-        size = function(term)
-          if term.direction == "horizontal" then
-            return 15
-          elseif term.direction == "vertical" then
-            return vim.o.columns * 0.4
-          end
-        end,
-        open_mapping = [[<C-\>]], -- Quick toggle with Ctrl+\
-        hide_numbers = true,
-        shade_filetypes = {},
-        shade_terminals = true,
-        shading_factor = 2,
-        start_in_insert = true,
-        insert_mappings = true,
-        terminal_mappings = true,
-        persist_size = true,
-        persist_mode = true,
-        direction = "horizontal", -- 'vertical' | 'horizontal' | 'tab' | 'float'
-        close_on_exit = true,
-        shell = vim.o.shell,
-        auto_scroll = true,
-        -- Floating terminal settings
-        float_opts = {
-          border = "curved", -- Matches NvChad style
-          winblend = 0,
-          highlights = {
-            border = "Normal",
-            background = "Normal",
-          },
-        },
-      }
-
-      -- Custom terminals for different purposes
-      local Terminal = require("toggleterm.terminal").Terminal
-
-      -- Floating terminal
-      local float_term = Terminal:new {
-        direction = "float",
-        float_opts = {
-          border = "curved",
-        },
-        hidden = true,
-      }
-
-      -- Compilation terminal
-      local compile_term = Terminal:new {
-        direction = "horizontal",
-        hidden = true,
-      }
-
-      -- Python REPL
-      local python_repl = Terminal:new {
-        cmd = "python3",
-        direction = "vertical",
-        hidden = true,
-      }
-
-      -- Node.js REPL
-      local node_repl = Terminal:new {
-        cmd = "node",
-        direction = "vertical",
-        hidden = true,
-      }
-
-      -- Git lazygit integration (if you have lazygit installed)
-      local lazygit = Terminal:new {
-        cmd = "lazygit",
-        dir = "git_dir",
-        direction = "float",
-        float_opts = {
-          border = "curved",
-          width = function()
-            return math.floor(vim.o.columns * 0.9)
-          end,
-          height = function()
-            return math.floor(vim.o.lines * 0.9)
-          end,
-        },
-        hidden = true,
-        on_open = function(term)
-          vim.cmd "startinsert!"
-          vim.api.nvim_buf_set_keymap(term.bufnr, "n", "q", "<cmd>close<CR>", { noremap = true, silent = true })
-        end,
-      }
-
-      -- Keymaps that integrate with NvChad
-      local map = vim.keymap.set
-
-      -- Terminal toggles (using leader key like NvChad)
-      -- Language-specific terminals
-      map("n", "<leader>tp", function()
-        python_repl:toggle()
-      end, { desc = "Toggle Python REPL" })
-      map("n", "<leader>tn", function()
-        node_repl:toggle()
-      end, { desc = "Toggle Node REPL" })
-
-      -- Git integration
-      map("n", "<leader>gg", function()
-        lazygit:toggle()
-      end, { desc = "Toggle Lazygit" })
-
-      -- Quick compile and run
-      map("n", "<leader>cr", function()
-        vim.cmd "w" -- Save file first
-        local ft = vim.bo.filetype
-        local file = vim.fn.expand "%"
-        local cmd = ""
-
-        -- Compilation commands for different languages
-        if ft == "c" then
-          local output = vim.fn.expand "%:r"
-          cmd = string.format("gcc %s -o %s && ./%s", file, output, output)
-        elseif ft == "cpp" then
-          local output = vim.fn.expand "%:r"
-          cmd = string.format("g++ %s -o %s && ./%s", file, output, output)
-        elseif ft == "rust" then
-          cmd = "cargo run"
-        elseif ft == "go" then
-          cmd = "go run " .. file
-        elseif ft == "python" then
-          cmd = "python3 " .. file
-        elseif ft == "javascript" then
-          cmd = "node " .. file
-        elseif ft == "lua" then
-          cmd = "lua " .. file
-        elseif ft == "java" then
-          local classname = vim.fn.expand "%:r"
-          cmd = string.format("javac %s && java %s", file, classname)
-        else
-          print("No compile command for " .. ft)
-          return
-        end
-
-        compile_term:send(cmd)
-        compile_term:open()
-      end, { desc = "Compile and run current file" })
-
-      -- Quick compile only
-      map("n", "<leader>cb", function()
-        vim.cmd "w"
-        local ft = vim.bo.filetype
-        local file = vim.fn.expand "%"
-        local cmd = ""
-
-        if ft == "c" then
-          cmd = string.format("gcc %s -o %s", file, vim.fn.expand "%:r")
-        elseif ft == "cpp" then
-          cmd = string.format("g++ %s -o %s", file, vim.fn.expand "%:r")
-        elseif ft == "rust" then
-          cmd = "cargo build"
-        elseif ft == "go" then
-          cmd = "go build " .. file
-        elseif ft == "java" then
-          cmd = "javac " .. file
-        else
-          print("No compile command for " .. ft)
-          return
-        end
-
-        compile_term:send(cmd)
-        compile_term:open()
-      end, { desc = "Compile current file" })
-
-      -- Terminal navigation (works in terminal mode)
-      function _G.set_terminal_keymaps()
-        local opts = { buffer = 0 }
-        map("t", "<esc>", [[<C-\><C-n>]], opts) -- Easy escape from terminal
-        map("t", "jk", [[<C-\><C-n>]], opts) -- Alternative escape
-        map("t", "<C-h>", [[<Cmd>wincmd h<CR>]], opts) -- Navigate left
-        map("t", "<C-j>", [[<Cmd>wincmd j<CR>]], opts) -- Navigate down
-        map("t", "<C-k>", [[<Cmd>wincmd k<CR>]], opts) -- Navigate up
-        map("t", "<C-l>", [[<Cmd>wincmd l<CR>]], opts) -- Navigate right
-      end
-
-      -- Apply terminal keymaps when entering terminal
-      vim.cmd "autocmd! TermOpen term://* lua set_terminal_keymaps()"
     end,
   },
   {
