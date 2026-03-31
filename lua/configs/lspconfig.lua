@@ -14,22 +14,15 @@ vim.filetype.add {
 
 -- Define server configurations using new API
 local servers = {
-  html = {},
-  cssls = {},
-  ts_ls = {
-    on_attach = function(client, bufnr)
-      -- Disable ts_ls formatting so it doesn't conflict with Biome/Conform
+  biome = {
+    on_attach = function(client, _)
       client.server_capabilities.documentFormattingProvider = false
-      client.server_capabilities.documentRangeFormattingProvider = false
-
-      -- Enable inlay hints for this specific buffer
-      if vim.lsp.inlay_hint then
-        vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
-      end
     end,
-    settings = {
-      -- ... (keep your existing inlayHints settings here)
-    },
+    root_dir = vim.fs.root(0, { "biome.json", "biome.jsonc" }),
+  },
+  cssls = {},
+  emmet_ls = {
+    filetypes = { "html", "css", "javascriptreact", "typescriptreact" },
   },
   clangd = {
     cmd = {
@@ -53,44 +46,7 @@ local servers = {
     cmd = { "tinymist" },
     filetypes = { "typst", "typ" },
   },
-  pyright = {
-    before_init = function(_, config)
-      -- Function to find Python executable in virtual environment
-      local function find_venv_python()
-        local venv_patterns = { "venv", "env", ".venv", ".env", "virtualenv" }
-        local workspace_root = config.root_dir or vim.fn.getcwd()
-
-        -- Check for virtual environments in workspace root
-        for _, venv in ipairs(venv_patterns) do
-          local venv_path = workspace_root .. "/" .. venv
-          local python_path = venv_path .. "/bin/python"
-
-          if vim.fn.filereadable(python_path) == 1 then
-            return python_path
-          end
-        end
-
-        -- Fallback to system python
-        return vim.fn.exepath "python3" or vim.fn.exepath "python"
-      end
-
-      local python_path = find_venv_python()
-      config.settings.python.pythonPath = python_path
-    end,
-    settings = {
-      python = {
-        analysis = {
-          typeCheckingMode = "basic",
-          autoSearchPaths = true,
-          useLibraryCodeForTypes = true,
-          autoImportCompletions = true,
-          diagnosticMode = "workspace",
-          -- Add these for better package resolution
-          extraPaths = {},
-          stubPath = vim.fn.stdpath "data" .. "/lazy/python-type-stubs",
-        },
-      },
-    },
+  ty = {
     root_dir = vim.fs.root(0, {
       "pyproject.toml",
       "setup.py",
@@ -100,13 +56,28 @@ local servers = {
       ".git",
     }),
   },
-  eslint = {
-    on_attach = function(client, bufnr)
-      vim.api.nvim_create_autocmd("BufWritePre", {
-        buffer = bufnr,
-        command = "EslintFixAll",
-      })
+  ruff = {
+    on_attach = function(client, _)
+      -- Disable hover in favor of pyright/ty
+      client.server_capabilities.hoverProvider = false
     end,
+  },
+  vtsls = {
+    on_attach = function(client, bufnr)
+      client.server_capabilities.documentFormattingProvider = false
+      client.server_capabilities.documentRangeFormattingProvider = false
+      if vim.lsp.inlay_hint then
+        vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
+      end
+    end,
+    settings = {
+      typescript = {
+        inlayHints = {
+          parameterNames = { enabled = "all" },
+          returnTypes = { enabled = true },
+        },
+      },
+    },
   },
 }
 
@@ -124,7 +95,7 @@ end
 local conform = require "conform"
 conform.setup {
   formatters_by_ft = {
-    python = { "black" },
+    python = { "ruff_format" },
     javascript = { "biome" },
     typescript = { "biome" },
     javascriptreact = { "biome" },
@@ -143,15 +114,9 @@ conform.setup {
     timeout_ms = 500,
     lsp_fallback = true,
   },
-  formatters = {
-    black = {
-      prepend_args = { "--fast" },
-    },
-  },
 }
 
 -- Python interpreter selection command
-vim.api.nvim_create_user_command("PythonSetInterpreter", function()
   local venv_patterns = { "venv", "env", ".venv", ".env", "virtualenv" }
   local workspace_root = vim.fn.getcwd()
   local interpreters = {}
@@ -167,21 +132,6 @@ vim.api.nvim_create_user_command("PythonSetInterpreter", function()
 
   -- Add system Python
   table.insert(interpreters, vim.fn.exepath "python3" or vim.fn.exepath "python")
-
-  vim.ui.select(interpreters, {
-    prompt = "Select Python interpreter:",
-  }, function(choice)
-    if choice then
-      -- Restart pyright with new Python path
-      vim.lsp.stop_client(vim.lsp.get_clients { name = "pyright" })
-      vim.defer_fn(function()
-        vim.cmd "edit"
-      end, 100)
-      print("Python interpreter set to: " .. choice)
-    end
-  end)
-end, { desc = "Select Python interpreter for Pyright" })
-
 -- Key mappings for manual formatting
 vim.keymap.set({ "n", "v" }, "<leader>mp", function()
   conform.format {
@@ -205,4 +155,3 @@ vim.keymap.set("n", "<leader>mf", function()
 end, { desc = "Format with specific formatter" })
 
 -- Python interpreter keymap
-vim.keymap.set("n", "<leader>pi", "<cmd>PythonSetInterpreter<cr>", { desc = "Select Python interpreter" })

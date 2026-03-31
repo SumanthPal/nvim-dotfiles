@@ -129,80 +129,6 @@ return {
     end,
   },
   {
-    "hrsh7th/nvim-cmp",
-    event = "InsertEnter",
-    dependencies = {
-      "hrsh7th/cmp-cmdline",
-    },
-    config = function()
-      local cmp = require "cmp"
-
-      -- 🔥 NORMAL INSERT MODE COMPLETION
-      cmp.setup {
-        sources = {
-          { name = "nvim_lsp" },
-          { name = "buffer" },
-          { name = "path" },
-          { name = "copilot" }, -- since you're using copilot-cmp
-        },
-      }
-
-      -- `:` cmdline completion
-      cmp.setup.cmdline(":", {
-        mapping = cmp.mapping.preset.cmdline(),
-        sources = cmp.config.sources({
-          { name = "path" },
-        }, {
-          { name = "cmdline" },
-        }),
-      })
-
-      -- `/` and `?` search completion
-      cmp.setup.cmdline({ "/", "?" }, {
-        mapping = cmp.mapping.preset.cmdline(),
-        sources = {
-          { name = "buffer" },
-        },
-      })
-      cmp.setup {
-        mapping = cmp.mapping.preset.insert {
-          ["<C-Space>"] = cmp.mapping.complete(),
-
-          ["<CR>"] = cmp.mapping.confirm {
-            select = true, -- accept currently selected item
-          },
-
-          ["<Tab>"] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-              cmp.select_next_item()
-            else
-              fallback()
-            end
-          end, { "i", "s" }),
-
-          ["<S-Tab>"] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-              cmp.select_prev_item()
-            else
-              fallback()
-            end
-          end, { "i", "s" }),
-        },
-
-        sources = {
-          { name = "nvim_lsp" },
-          { name = "buffer" },
-          { name = "path" },
-          { name = "copilot" },
-        },
-      }
-    end,
-  },
-  {
-    "hrsh7th/cmp-cmdline",
-    lazy = true,
-  },
-  {
     "rcarriga/nvim-notify",
     opts = {
       background_colour = "#000000",
@@ -252,10 +178,6 @@ return {
     },
   },
   {
-    "github/copilot.vim",
-    event = "InsertEnter",
-  },
-  {
     "coder/claudecode.nvim",
     dependencies = { "folke/snacks.nvim" },
     config = true,
@@ -282,14 +204,6 @@ return {
       { "<leader>aa", "<cmd>ClaudeCodeDiffAccept<cr>", desc = "Accept diff" },
       { "<leader>ad", "<cmd>ClaudeCodeDiffDeny<cr>", desc = "Deny diff" },
     },
-  },
-  {
-    "zbirenbaum/copilot-cmp",
-    event = "InsertEnter",
-    dependencies = { "github/copilot.vim" },
-    config = function()
-      require("copilot_cmp").setup()
-    end,
   },
   {
     "nvim-pack/nvim-spectre",
@@ -497,7 +411,21 @@ return {
   },
 
   -- test new blink
-  -- { import = "nvchad.blink.lazyspec" },
+  { import = "nvchad.blink.lazyspec" },
+  {
+    "supermaven-inc/supermaven-nvim",
+    event = "InsertEnter",
+    config = function()
+      require("supermaven-nvim").setup {
+        keymaps = {
+          accept_suggestion = "<Right>",
+          clear_suggestion = "<C-]>",
+          accept_word = "<C-j>",
+        },
+        ignore_filetypes = { "TelescopePrompt" },
+      }
+    end,
+  },
 
   -- {
   -- 	"nvim-treesitter/nvim-treesitter",
