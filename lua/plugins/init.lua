@@ -1,5 +1,13 @@
 return {
   {
+    "mrjones2014/smart-splits.nvim",
+    lazy = false,
+    opts = {
+      ignored_filetypes = { "NvimTree", "neo-tree" },
+      ignored_buftypes = { "nofile" },
+    },
+  },
+  {
     "stevearc/conform.nvim",
     -- event = 'BufWritePre', -- uncomment for format on save
     opts = require "configs.conform",
@@ -78,7 +86,7 @@ return {
       vim.o.autoread = true -- Required for `opts.events.reload`
 
       -- Recommended/example keymaps
-      vim.keymap.set({ "n", "x" }, "<C-a>", function()
+      vim.keymap.set({ "n", "x" }, "<leader>oa", function()
         require("opencode").ask("@this: ", { submit = true })
       end, { desc = "Ask opencode…" })
       vim.keymap.set({ "n", "x" }, "<C-x>", function()
@@ -184,6 +192,28 @@ return {
     lazy = false,
     opts = {
       terminal_cmd = "/opt/homebrew/bin/claude",
+      terminal = {
+        provider = "external",
+        provider_opts = {
+          -- Open Claude in a real tmux pane instead of an nvim-managed terminal.
+          -- Env vars must be baked into the command string: tmux spawns the pane
+          -- via the server's own shell, so jobstart()'s `env` table never reaches it.
+          -- Reuses an existing "claude" pane in the current window if one is running,
+          -- rather than spawning a new pane on every toggle.
+          external_terminal_cmd = function(cmd, env)
+            local env_prefix = ""
+            for k, v in pairs(env) do
+              env_prefix = env_prefix .. k .. "=" .. vim.fn.shellescape(v) .. " "
+            end
+            local inner_cmd = env_prefix .. cmd
+            local script = "existing=$(tmux list-panes -F '#{pane_id} #{pane_current_command}'"
+              .. " | awk '$2 ~ /claude/ {print $1; exit}'); "
+              .. 'if [ -n "$existing" ]; then tmux select-pane -t "$existing"; '
+              .. "else tmux split-window -h " .. vim.fn.shellescape(inner_cmd) .. "; fi"
+            return { "sh", "-c", script }
+          end,
+        },
+      },
     },
     keys = {
       { "<leader>a", nil, desc = "AI/Claude Code" },
@@ -436,4 +466,16 @@ return {
   -- 		},
   -- 	},
   -- },
+  {
+    "nvim-tree/nvim-tree.lua",
+    opts = {
+      actions = {
+        open_file = {
+          window_picker = {
+            enable = false,
+          },
+        },
+      },
+    },
+  },
 }

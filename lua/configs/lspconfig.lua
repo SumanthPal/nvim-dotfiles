@@ -24,6 +24,15 @@ local servers = {
   emmet_ls = {
     filetypes = { "html", "css", "javascriptreact", "typescriptreact" },
   },
+  html = {},
+  eslint = {
+    on_attach = function(_, bufnr)
+      vim.api.nvim_create_autocmd("BufWritePre", {
+        buffer = bufnr,
+        command = "EslintFixAll",
+      })
+    end,
+  },
   clangd = {
     cmd = {
       "clangd",
@@ -39,7 +48,7 @@ local servers = {
       completeUnimported = true,
       clangdFileStatus = true,
     },
-    filetypes = { "c", "tpp", "hpp", "cpp", "objc", "objcpp", "cuda", "proto" },
+    filetypes = { "c", "cpp", "objc", "objcpp", "cuda", "proto" },
   },
   rust_analyzer = {},
   tinymist = {
@@ -81,57 +90,20 @@ local servers = {
   },
 }
 
--- Enable all servers using the new vim.lsp.enable API
+-- Configure and enable all servers using the new vim.lsp.config/enable API
 for server, config in pairs(servers) do
   -- Merge with nvlsp defaults
   config.on_attach = config.on_attach or nvlsp.on_attach
   config.on_init = config.on_init or nvlsp.on_init
   config.capabilities = config.capabilities or nvlsp.capabilities
 
-  vim.lsp.enable(server, config)
+  vim.lsp.config(server, config)
+  vim.lsp.enable(server)
 end
 
 -- FORMATTERS CONFIGURATION
 local conform = require "conform"
-conform.setup {
-  formatters_by_ft = {
-    python = { "ruff_format" },
-    javascript = { "biome" },
-    typescript = { "biome" },
-    javascriptreact = { "biome" },
-    typescriptreact = { "biome" },
-    json = { "biome" },
-    jsonc = { "biome" },
-    css = { "biome" },
-    html = { "biome" },
-    lua = { "stylua" },
-    c = { "clang_format" },
-    cpp = { "clang_format" },
-    rust = { "rustfmt" },
-    markdown = { "prettier" },
-  },
-  format_on_save = {
-    timeout_ms = 500,
-    lsp_fallback = true,
-  },
-}
 
--- Python interpreter selection command
-  local venv_patterns = { "venv", "env", ".venv", ".env", "virtualenv" }
-  local workspace_root = vim.fn.getcwd()
-  local interpreters = {}
-
-  -- Find all virtual environments
-  for _, venv in ipairs(venv_patterns) do
-    local venv_path = workspace_root .. "/" .. venv
-    local python_path = venv_path .. "/bin/python"
-    if vim.fn.filereadable(python_path) == 1 then
-      table.insert(interpreters, python_path)
-    end
-  end
-
-  -- Add system Python
-  table.insert(interpreters, vim.fn.exepath "python3" or vim.fn.exepath "python")
 -- Key mappings for manual formatting
 vim.keymap.set({ "n", "v" }, "<leader>mp", function()
   conform.format {
@@ -153,5 +125,3 @@ vim.keymap.set("n", "<leader>mf", function()
     end
   end)
 end, { desc = "Format with specific formatter" })
-
--- Python interpreter keymap

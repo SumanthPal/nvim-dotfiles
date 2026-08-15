@@ -1,0 +1,14 @@
+# this is the path to the remote. Can be either a local/remote filepath.
+# or if using ssh
+remote_path = "spallamr@netsail-1.ics.uci.edu:/home/spallamr/nautilus-real-time-website"
+
+# specifying a file(s) which should be synced "down" but are on ignore files.
+# this is a workaround to sync down files which are included on ignore files.
+remote_includes = "build.log"
+# or using an array if multiple files are needed.
+remote_includes = ["build.log", "build/generated.json"]
+
+# specifying an gitignore file(s). Files matching patterns in ignore files are
+# excluded from "SyncUp" and "SyncDown" except ones specified in `remote_includes`.
+# For example, to exclude file(s) in the global gitignore and the project gitignore:
+ignorefile_paths = ["~/.gitignore", ".gitignore"]
