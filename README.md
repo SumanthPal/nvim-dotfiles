@@ -1,91 +1,17 @@
+# nvim
 
-# 🚀 My NvChad Neovim Configuration
+my nvim setup for development w/ agentic focus. this setup is primarily for looking and reviewing code. i still use this to write with my configured lsps for learning purposes.
 
-my nvim setup built from NvChad for mainly python, cpp, and rust development
+```
+init.lua            leader, lazy bootstrap, loads the modules below
+lua/options.lua     editor options, filetypes, mason PATH
+lua/keymaps.lua     general + window/buffer keymaps
+lua/autocmds.lua    checktime for agent edits, treesitter start
+lua/lsp.lua         servers (vim.lsp.config/enable), diagnostics, LSP keymaps
+lua/statusline.lua  global statusline
+lua/agents.lua      <leader>a/A send file:line to an agent pane; target for `nvo`
+lua/review.lua      <leader>g* code review with diffview; review.md is the checklist
+lua/plugins/        ui, editor, lsp (mason/blink/conform), git
+```
 
-## ✨ Features
-
-**🎨 Modern Aesthetics**
-
-* NvChad base configuration with clean themes
-* `noice.nvim` for enhanced UI notifications
-* Minimal interface, multiple theme support (`<Space>th`)
-
-**🔧 Development Tools**
-
-* Multi-language LSP: Python (`pyright`), JS/TS (`ts_ls`), C/C++ (`clangd`), Rust (`rust_analyzer`), HTML/CSS
-* Formatters: Black, Biome, Stylua, clang-format
-* GitHub Copilot integration
-* Terminal management via `toggleterm.nvim`
-* Git workflow enhancements
-
-**📋 Clipboard & Registers**
-
-* `nvim-neoclip` for persistent history (1000+ items)
-* Advanced buffer and register management
-* System clipboard auto-sync
-
-**🗂️ Buffer & Navigation**
-
-* Telescope-powered buffer switching
-* Number-jump buffer access (`<leader>1-9`)
-* Session and layout management
-
-**⚡ Productivity**
-
-* Lazy loading for fast startup
-* Custom keybindings for dev workflow
-* Auto-completion and Treesitter syntax highlighting
-
----
-
-## 📦 Plugin Stack
-
-**Core:** NvChad, `lazy.nvim`
-**LSP & Formatting:** `nvim-lspconfig`, `conform.nvim`, `nvim-treesitter`, `copilot.vim`, `copilot-cmp`
-**UI & Experience:** `noice.nvim`, `nvim-notify`, `nui.nvim`
-**Terminal & Clipboard:** `toggleterm.nvim`, `nvim-neoclip.lua`
-**Buffer & Navigation:** `buffer_manager.nvim`, `telescope.nvim`
-
----
-
-## ⌨️ Key Mappings (Highlights)
-
-**Buffers:**
-
-* `<S-h>/<S-l>`: Previous/Next buffer
-* `<leader>1-9`: Jump to buffer by number
-* `<leader>bb`: Buffer manager
-
-**Clipboard:**
-
-* `<leader>p`: Clipboard history
-* `<leader>cy`: Copy to system clipboard
-
-**Terminal:**
-
-* `<C-\>`: Toggle terminal
-* `<leader>tf/tv/tp/tn/gg`: Floating/vertical terminals, REPLs, Lazygit
-
-**LSP & Formatting:**
-
-* `<leader>mp`: Format file
-* `gd/gr/K`: Go to definition / references / hover
-* `<leader>ca`: Code actions
-
-**Theme & UI:**
-
-* `<leader>th`: Theme picker
-* `<leader>uu`: Toggle transparency
-
----
-
-## 🎯 Language Support
-
-**Python:** Pyright, Black, REPL, debugger ready
-**JS/TS:** ts\_ls, Biome, inlay hints, Node.js REPL
-**C/C++:** clangd, clang-format, project indexing
-**Rust** rust_analyzer, linter, 
-**Systems/DevOps:** Lua/Stylua, Markdown, JSON/YAML, shell scripts
-
-
+this setup needs the following: `tree-sitter-cli` (parsers), `node` (mason's npm-based servers), `rg`.
