@@ -1,28 +1,44 @@
-require "nvchad.options"
+local o, opt = vim.o, vim.opt
 
--- add yours here!
-vim.opt.relativenumber = true
--- local o = vim.o
--- o.cursorlineopt ='both' -- to enable cursorline!
+o.number = true
+o.relativenumber = true
+o.numberwidth = 2
+o.cursorline = true
+o.cursorlineopt = "number"
+o.signcolumn = "yes"
+o.laststatus = 3 -- one statusline for all windows
+o.showtabline = 0 -- no tab bar (diffview opens reviews in a tab)
+o.showmode = false -- mode is in the statusline
+o.ruler = false
+opt.fillchars = { eob = " ", diff = "╱" } -- ╱ hatches diff filler lines
+opt.shortmess:append "sI" -- no intro screen
 
--- Core editor transparency
-vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
-vim.api.nvim_set_hl(0, "NormalFloat", { bg = "none" })
-vim.api.nvim_set_hl(0, "FloatBorder", { bg = "none" })
-vim.api.nvim_set_hl(0, "Pmenu", { bg = "none" })
+o.expandtab = true
+o.shiftwidth = 2
+o.tabstop = 2
+o.softtabstop = 2
+o.smartindent = true
 
--- Telescope transparency
-vim.api.nvim_set_hl(0, "NvimTreeNormal", { bg = "none" })
-vim.api.nvim_set_hl(0, "NvimTreeNormalNC", { bg = "none" })
-vim.api.nvim_set_hl(0, "NvimTreeEndOfBuffer", { bg = "none" })
-vim.api.nvim_set_hl(0, "NvimTreeVertSplit", { bg = "none" })
-vim.api.nvim_set_hl(0, "NvimTreeWinSeparator", { bg = "none" })
+o.ignorecase = true
+o.smartcase = true
+o.mouse = "a"
+o.clipboard = "unnamedplus"
+o.splitbelow = true
+o.splitright = true
+o.splitkeep = "screen"
+o.timeoutlen = 400
+o.updatetime = 250 -- also drives CursorHold (checktime) and gitsigns
+o.undofile = true
+opt.whichwrap:append "<>[]hl"
 
-vim.api.nvim_set_hl(0, "TelescopeNormal", { bg = "none" })
-vim.api.nvim_set_hl(0, "TelescopeBorder", { bg = "none" })
-vim.api.nvim_set_hl(0, "TelescopePromptNormal", { bg = "none" })
-vim.api.nvim_set_hl(0, "TelescopePromptBorder", { bg = "none" })
-vim.api.nvim_set_hl(0, "TelescopeResultsNormal", { bg = "none" })
-vim.api.nvim_set_hl(0, "TelescopeResultsBorder", { bg = "none" })
-vim.api.nvim_set_hl(0, "TelescopePreviewNormal", { bg = "none" })
-vim.api.nvim_set_hl(0, "TelescopePreviewBorder", { bg = "none" })
+vim.g.loaded_node_provider = 0
+vim.g.loaded_python3_provider = 0
+vim.g.loaded_perl_provider = 0
+vim.g.loaded_ruby_provider = 0
+
+-- binaries installed by mason.nvim
+vim.env.PATH = vim.fn.stdpath "data" .. "/mason/bin:" .. vim.env.PATH
+
+vim.filetype.add {
+  extension = { tpp = "cpp", typ = "typst" },
+}
